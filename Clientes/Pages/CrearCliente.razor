@@ -1,0 +1,190 @@
+﻿@page "/crearcliente"
+@page "/editarcliente/{id:int}"
+@using Clientes.Core.Servicios;
+@using Clientes.Domain.Models;
+@inject NavigationManager NavigationManager
+@inject SweetAlertService Swal
+
+<h3>Crear Cliente</h3>
+
+<form>
+	<div class="row">
+
+		<div class="col-6">
+			<div class="mb-1">
+
+				<label for="Nombre" class="form-label">Nombre:</label>
+				<div class="col-md-6">
+					<input type="text" class="form-control" @bind-value="clienteData.Nombre" />
+				</div>
+			</div>
+
+			<div class="mb-1">
+
+				<label for="Email" class="form-label">Email:</label>
+				<div class="col-md-6">
+					<input type="email" class="form-control" @bind-value="clienteData.Email" />
+				</div>
+			</div>
+
+			<div class="mb-1">
+
+				<label for="Telefono" class="form-label">Telefono:</label>
+				<div class="col-md-6">
+					<input type="tel" class="form-control" @bind-value="clienteData.Telefono" />
+				</div>
+			</div>
+		</div>
+
+		<!--Direcciones-->
+		
+		<div class="col-6">
+			<div class="mb-2 row">
+				<label for="Calle" class="col-sm-2 col-form-label">Calle:</label>
+				<div class="col-sm-10">
+					<input type="text" class="form-control" @bind-value="direccionData.Calle" />
+				</div>
+			</div>
+
+			<div class="mb-2 row">
+				<label for="Sector" class="col-sm-2 col-form-label">Sector:</label>
+				<div class="col-sm-10">
+					<input type="text" class="form-control" @bind-value="direccionData.Sector" />
+				</div>
+			</div>
+
+			<div class="mb-2 row">
+				<label for="Municipio" class="col-sm-2 col-form-label">Municipio:</label>
+				<div class="col-sm-10">
+					<input type="text" class="form-control" @bind-value="direccionData.Municipio" />
+				</div>
+			</div>
+
+			<div class="mb-2 row">
+				<label for="Referencia" class="col-sm-2 col-form-label">Referencia:</label>
+				<div class="col-sm-10">
+					<input type="text" class="form-control" @bind-value="direccionData.Referencia" />
+				</div>
+			</div>
+			<button type="button" @onclick="@AgregarDireccion" class="btn btn-sm btn-primary mb-1" role="button" disabled="@disable">
+				<i class="fas fa-plus"></i>
+				Agregar direccion
+			</button>
+
+			<table class="table table-striped align-middle table-bordered">
+				<thead class="table-primary">
+					<tr>
+						<th>Calle</th>
+						<th>Sector</th>
+						<th>Municipio</th>
+						<th>Referencia</th>
+						<th></th>
+					</tr>
+				</thead>
+
+				@if (Direcciones != null)
+				{
+					@foreach (var c in Direcciones)
+					{
+						<tbody>
+							<tr>
+								<td>@c.Calle</td>
+								<td>@c.Sector</td>
+								<td>@c.Municipio</td>
+								<td>@c.Referencia</td>
+								<td>
+									<button type="button" @onclick="(() => eliminar(c.Id))" class="btn btn-outline-danger" role="button">
+										Delete
+									</button>
+								</td>
+							</tr>
+						</tbody>
+					}
+				}
+			</table>
+		</div>
+	</div>
+
+	<button type="button" class="btn btn-primary" @onclick="AgregarCliente">Guardar</button>
+	<button type="button" class="btn btn-danger" @onclick="Cancelar">Volver</button>
+</form>
+
+@code {
+	[Parameter]
+	public int id { get; set; } = 0;
+	bool disable = true;
+	bool hidden = false;
+	Cliente clienteData = new Cliente();
+	Direccion direccionData = new Direccion();
+	List<Direccion> Direcciones = new List<Direccion>();
+
+	[Inject]
+	private IClienteService clienteService { get; set; }
+
+	[Inject]
+	private IDireccionService direccionService { get; set; }
+
+	protected override async void OnInitialized()
+	{
+		Direcciones = new List<Direccion>();
+		if (id > 0)
+		{
+			clienteData = await clienteService.GetById(id);
+			Direcciones = direccionService.GetAllByIdCliente(id).ToList();
+			disable = false;
+		}
+	}
+
+	private async void AgregarCliente()
+	{
+		try
+		{
+			if (id > 0)
+			{
+				clienteService.Editar(clienteData);
+			}
+			else
+			{
+				clienteData = await clienteService.Agregar(clienteData);
+				id = clienteData.Id;
+			}
+			disable = false;
+
+			await Swal.FireAsync("Completado", "Cliente Guardado Correctamente", "success");
+			//NavigationManager.NavigateTo("/clientes");
+		}
+		catch (Exception ex)
+		{
+			await Swal.FireAsync("Oops...", ex.Message, "error");
+		}
+	}
+
+	private async void AgregarDireccion()
+	{
+		try
+		{
+			direccionData.ClienteId = id;
+			direccionService.Validar(direccionData);
+			clienteService.Validar(clienteData);
+			direccionData = await direccionService.Agregar(direccionData);
+			//Direcciones.Add(direccionData);
+			Direcciones = direccionService.GetAllByIdCliente(id).ToList();
+			direccionData = new Direccion();
+		}
+		catch (Exception ex)
+		{
+			await Swal.FireAsync("Oops...", ex.Message, "error");
+		}
+	}
+
+	void eliminar(int id)
+	{
+		direccionService.Delete(id);
+		Direcciones = Direcciones.Where(x => x.Id != id).ToList();
+	}
+
+	private void Cancelar()
+	{
+		NavigationManager.NavigateTo("/clientes");
+	}
+}

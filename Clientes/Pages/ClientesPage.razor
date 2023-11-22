@@ -1,0 +1,65 @@
+﻿@page "/clientes"
+@using Clientes.Core.Servicios;
+@using Clientes.Domain.Models;
+@inject SweetAlertService Swal
+
+<h3>Lista de Clientes</h3>
+
+<div class="mb-2">
+    <a href="/crearcliente" class="btn btn-primary">Agregar</a>
+</div>
+
+@if (clientes.Any())
+{
+    <table class="table table-striped align-middle table-bordered">
+        <thead class="table-primary">
+            <tr>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Telefono</th>
+                <th></th>
+            </tr>
+        </thead>
+        
+        @foreach (var c in clientes)
+        {
+            <tbody>
+                <tr>
+                    <td>@c.Nombre</td>
+                    <td>@c.Email</td>
+                    <td>@c.Telefono</td>
+                    <td>
+                        <a href='/editarcliente/@c.Id' class="btn btn-outline-dark" role="button">
+                            Edit
+                        </a>
+                        <button @onclick="(() => eliminar(c.Id))" class="btn btn-outline-danger" role="button">
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+            </tbody>            
+        }
+    </table>
+}
+else
+{
+    <p>No hay clientes.</p>
+}
+
+@code {
+    List<Cliente> clientes;
+
+    [Inject]
+    private IClienteService clienteService { get; set; }
+
+    protected override void OnInitialized()
+    {
+        clientes = clienteService.GetAll().ToList();
+    }
+
+    void eliminar(int id)
+    {
+        clienteService.Delete(id);
+        clientes = clienteService.GetAll().ToList();
+    }
+}
