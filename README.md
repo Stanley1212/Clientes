@@ -71,7 +71,7 @@ Swagger: `http://localhost:5000/swagger`
 - **@tanstack/react-query**
 - **Tailwind CSS**
 
-### 安装 y ejecutar
+### ejecutar
 
 ```bash
 cd oriontek-client
